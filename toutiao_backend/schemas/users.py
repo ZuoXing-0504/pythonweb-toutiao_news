@@ -1,0 +1,37 @@
+from pydantic import BaseModel, Field, ConfigDict
+from typing import Optional
+class UserRequest(BaseModel):
+    username: str
+    password: str
+#基础类
+class UserInfoBase(BaseModel):
+    nickname: Optional[str] = Field(None, max_length=50, description="昵称")
+    avatar: Optional[str] = Field(None, max_length=255, description="头像URL")
+    gender: Optional[str] = Field(None, max_length=10, description="性别")
+    bio: Optional[str] = Field(None, max_length=500, description="个⼈简介")
+
+#user_info 对应的类·
+class UserInfoResponse(UserInfoBase):
+    id : int
+    username : str
+    model_config = ConfigDict(
+        from_attributes=True  # 允许从 ORM 对象属性中取值
+    )
+
+#data 数据类型
+class UserAuthResponse(BaseModel):
+    token: str
+    user_info: UserInfoResponse = Field(...,alias="userInfo")
+    #模型类配置
+    model_config = ConfigDict(
+        populate_by_name=True,#alias 与字段名不一致时，需要设置为True
+        from_attributes=True#允许从 ORM 对象属性中取值
+    )
+#更新用户信息的模型类
+class UserUpdateRequest(UserInfoBase):
+    phone: Optional[str] = None
+
+#修改密码时的模型类
+class UserChangePasswordRequest(BaseModel):
+    old_password: str = Field(...,description="旧密码",alias="oldPassword")
+    new_password: str = Field(..., min_length=6, max_length=20,description="新密码",alias="newPassword")
