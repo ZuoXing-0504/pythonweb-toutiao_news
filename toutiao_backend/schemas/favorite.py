@@ -13,7 +13,7 @@ class FavoriteNewsItemModel(NewsItemBase):
     favorite_id: int = Field(...,alias="favoriteId")
     favorite_time: datetime = Field(..., alias="favoriteTime")
     model_config = ConfigDict(
-        populate_default=True,
+        populate_by_name=True,
         from_attributes=True,
     )
 #获取收藏列表响应
@@ -22,6 +22,6 @@ class FavoriteListResponse(BaseModel):
     total: int
     has_more: bool = Field(...,alias="hasMore")
     model_config =ConfigDict(
-        populate_default=True,
+        populate_by_name=True,
         from_attributes=True,
     )
