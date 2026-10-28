@@ -3,17 +3,17 @@ from fastapi.exceptions import HTTPException
 from fastapi import APIRouter, Depends,Query,Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from config.db_conf import get_db
-
+from crud import news_cache
 
 from crud import news
 router = APIRouter(prefix="/api/news", tags=["news"])
 @router.get("/categories")
 async def get_categories(skip: int = 0, limit: int = 100,db:AsyncSession = Depends(get_db)):
-    categories = await news.get_categories(db,skip,limit)
+    categories = await news_cache.get_categories(db,skip,limit)
     return {
-        "code": 200,
         "msg": "success",
-        "data": categories
+        "data": categories,
+        "code": 200
     }
 # 新闻列表
 @router.get("/list")
