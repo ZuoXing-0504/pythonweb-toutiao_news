@@ -2,7 +2,8 @@ from fastapi.encoders import jsonable_encoder
 from sqlalchemy import select, func, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from models.news import Category, News
-from cache.news_cache import get_cached_categories, set_cached_categories
+from cache.news_cache import get_cached_categories, set_cached_categories,get_cached_news_list,set_cached_news_list
+from schemas.base import NewsItemBase
 
 
 async def get_categories(db:AsyncSession, skip: int = 0, limit: int = 100):
@@ -21,9 +22,19 @@ async def get_categories(db:AsyncSession, skip: int = 0, limit: int = 100):
 
 # 新闻列表
 async def get_news_list(db:AsyncSession,category_id: int,  skip: int = 0, limit: int = 10):
+    #查缓存是否有数据
+    page = skip // limit + 1
+    cached_news = await get_cached_news_list(category_id,page,limit)
+    if cached_news:
+        return [News(**news) for news in cached_news]
     stmt = select(News).where(News.category_id == category_id).offset(skip).limit(limit)
     result = await db.execute(stmt)
     news = result.scalars().all()
+    #将查询结果写入缓存
+    if news:
+        #orm->pydantic->dict
+        news = [NewsItemBase.model_validate(item).model_dump(mode="json",by_alias=False) for item in news]
+        await set_cached_news_list(category_id,page,limit,news)
     return news
 #新闻指定分类总量
 async def get_news_total(db:AsyncSession, category_id: int):

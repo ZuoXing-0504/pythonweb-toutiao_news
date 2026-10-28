@@ -23,7 +23,7 @@ async def get_news_list(
         page_size: int = Query(10, alias="pageSize",le=100),
         db:AsyncSession = Depends(get_db)
 ):
-    news_list = await news.get_news_list(db,category_id,(page-1)*page_size,page_size)
+    news_list = await news_cache.get_news_list(db,category_id,(page-1)*page_size,page_size)
     total = await news.get_news_total(db,category_id)
     has_more = (page-1)*page_size + len(news_list) < total
     return {
