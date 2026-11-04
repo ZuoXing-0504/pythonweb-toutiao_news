@@ -28,10 +28,7 @@ async def get_news_list(
         page_size: int = Query(10, alias="pageSize", ge=1, le=100),
         db:AsyncSession = Depends(get_db)
 ):
-    news_list = await news_cache.get_news_list(db,category_id,(page-1)*page_size,page_size)
-    total = await news.get_news_total(db,category_id)
-    has_more = (page-1)*page_size + len(news_list) < total
-    data = NewsListResponse(list=news_list, total=total, has_more=has_more)
+    data = await news_cache.get_news_page(db, category_id, page, page_size)
     return success_response(message="获取新闻列表成功", data=data)
 #详情
 @router.get("/detail", response_model=ApiResponse[NewsDetailResponse])

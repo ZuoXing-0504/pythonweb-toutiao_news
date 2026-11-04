@@ -44,9 +44,9 @@ async def client(session_factory, monkeypatch) -> AsyncIterator[AsyncClient]:
         return True
 
     monkeypatch.setattr(news_cache, "get_cached_categories", cache_miss)
-    monkeypatch.setattr(news_cache, "get_cached_news_list", cache_miss)
+    monkeypatch.setattr(news_cache, "get_cached_news_page", cache_miss)
     monkeypatch.setattr(news_cache, "set_cached_categories", cache_write)
-    monkeypatch.setattr(news_cache, "set_cached_news_list", cache_write)
+    monkeypatch.setattr(news_cache, "set_cached_news_page", cache_write)
     app.dependency_overrides[get_db] = override_get_db
 
     transport = ASGITransport(app=app, raise_app_exceptions=False)

@@ -50,5 +50,9 @@ pip install -r requirements-dev.txt
 pytest
 ```
 
+## 缓存策略
+
+新闻分类和完整分页结果（列表、总数、是否有下一页）采用 Cache Aside 模式：优先读取 Redis，未命中时查询 MySQL 并回填缓存。缓存内容统一使用 Pydantic DTO，Redis 异常时自动降级到数据库；空结果使用短 TTL 防止缓存穿透，新闻浏览量允许在 10 分钟 TTL 内最终一致。Redis 连接通过 `REDIS_URL` 配置。
+
 > 注意：项目仍在开发中，部分前端功能对应的后端接口尚未完成。
 

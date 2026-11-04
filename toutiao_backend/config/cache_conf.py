@@ -1,45 +1,40 @@
-import redis.asyncio as redis
 import json
+import logging
+import os
 from typing import Any
-REDIS_HOST = "localhost"
-REDIS_PORT = 6379
-REDIS_DB = 0
+
+import redis.asyncio as redis
+from dotenv import load_dotenv
+from redis.exceptions import RedisError
 
 
-# 创建 Redis 的连接对象
-redis_client = redis.Redis(
-    host=REDIS_HOST,
-    port=REDIS_PORT,
-    db=REDIS_DB,
-    decode_responses=True
+logger = logging.getLogger(__name__)
+load_dotenv()
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+REDIS_TIMEOUT_SECONDS = float(os.getenv("REDIS_TIMEOUT_SECONDS", "1.0"))
+
+redis_client = redis.from_url(
+    REDIS_URL,
+    decode_responses=True,
+    socket_connect_timeout=REDIS_TIMEOUT_SECONDS,
+    socket_timeout=REDIS_TIMEOUT_SECONDS,
 )
 
-#设置 和 读取缓存
-#读取缓存：字符串
-async def get_cache(key: str):
-    try:
-        return await redis_client.get(key)
-    except Exception as e:
-        print(f"读取缓存失败：{e}")
-        return None
 
-#读取缓存：列表 或 字典
-async def get_json_cache(key: str):
+async def get_json_cache(key: str) -> Any | None:
     try:
         data = await redis_client.get(key)
-        if data:
-            return json.loads(data)
+        return json.loads(data) if data is not None else None
+    except (RedisError, json.JSONDecodeError) as exc:
+        logger.warning("Redis cache read failed for key %s: %s", key, exc)
         return None
-    except Exception as e:
-        print(f"读取缓存失败：{e}")
-        return None
-#设置缓存
-async def set_cache(key: str, value: Any, expire: int = 3600):
+
+
+async def set_json_cache(key: str, value: Any, expire: int = 3600) -> bool:
     try:
-        if isinstance(value, (list, dict)):
-            value = json.dumps(value)
-        await redis_client.set(key, value=value, ex=expire)
+        payload = json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+        await redis_client.set(key, value=payload, ex=expire)
         return True
-    except Exception as e:
-        print(f"设置缓存失败：{e}")
+    except (RedisError, TypeError, ValueError) as exc:
+        logger.warning("Redis cache write failed for key %s: %s", key, exc)
         return False
