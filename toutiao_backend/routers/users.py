@@ -58,5 +58,5 @@ async def update_password(
 ):
     success = await users.change_password(db,user,password_data.new_password,password_data.old_password)
     if not success:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="修改密码失败")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail="旧密码错误")
     return success_response(message="修改密码成功")

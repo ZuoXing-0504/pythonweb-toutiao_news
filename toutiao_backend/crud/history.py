@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from datetime import datetime
 from models.news import News
 from models.history import History
+from models.base import utc_now
 from sqlalchemy import select,func,delete
 
 
@@ -13,17 +13,17 @@ async def add_history(
 ):
     query =select(History).where(History.news_id == news_id, History.user_id == user_id).limit(1)
     result = await db.execute(query)
-    history = result.scalar()
+    history = result.scalar_one_or_none()
 
     if history:
-        history.view_time = datetime.now()
-        await db.commit()
+        history.view_time = utc_now()
+        await db.flush()
         await db.refresh(history)
         return history
     else:
         history = History(user_id=user_id,news_id=news_id)
     db.add(history)
-    await db.commit()
+    await db.flush()
     await db.refresh(history)
     return history
 
@@ -63,15 +63,9 @@ async def delete_history(
         user_id: int,
         news_id: int
 ):
-    query = select(History).where(History.news_id == news_id, History.user_id == user_id)
+    query = delete(History).where(History.news_id == news_id, History.user_id == user_id)
     result = await db.execute(query)
-    history = result.scalar()
-    if history:
-        await db.delete(history)
-        await db.commit()
-        return history
-    else:
-        return None
+    return result.rowcount > 0
 #清空浏览历史列表
 async def clear_history(
         db: AsyncSession,
@@ -79,5 +73,4 @@ async def clear_history(
 ):
     query = delete(History).where(History.user_id == user_id)
     result = await db.execute(query)
-    await db.commit()
-    return result.rowcount
+    return result.rowcount or 0

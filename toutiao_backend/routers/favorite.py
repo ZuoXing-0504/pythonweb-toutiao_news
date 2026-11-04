@@ -7,6 +7,7 @@ from config.db_conf import get_db
 from models.users import User
 
 from crud import favorite
+from crud import news
 from utils.auth import get_current_user
 
 from utils.response import success_response
@@ -18,7 +19,7 @@ router = APIRouter(prefix="/api/favorite",tags=["favorite"])
 #检查收藏
 @router.get("/check", response_model=ApiResponse[FavoriteCheckResponse])
 async def check_favorite(
-        news_id:int = Query(...,alias="newsId"),
+        news_id:int = Query(...,alias="newsId", ge=1),
         user:User = Depends(get_current_user),
         db:AsyncSession = Depends(get_db)
 ):
@@ -31,21 +32,21 @@ async def add_favorite(
         user:User = Depends(get_current_user),
         db:AsyncSession = Depends(get_db)
 ):
+    if not await news.news_exists(db, data.news_id):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="新闻不存在")
     result = await favorite.add_favorite(db,user.id,data.news_id)
     return success_response(message="添加收藏成功",data=result)
 
 #取消收藏
 @router.delete("/remove", response_model=ApiResponse[None])
 async def remove_favorite(
-        news_id:int = Query(...,alias="newsId"),
+        news_id:int = Query(...,alias="newsId", ge=1),
         user:User = Depends(get_current_user),
         db:AsyncSession = Depends(get_db)
 ):
     result = await favorite.remove_favorite(db,user.id,news_id)
-    if result:
-        return success_response(message="取消收藏成功")
-    else:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="收藏记录不存在")
+    message = "取消收藏成功" if result else "收藏记录不存在，无需取消"
+    return success_response(message=message)
 
 #获取收藏列表
 @router.get("/list", response_model=ApiResponse[FavoriteListResponse])

@@ -1,11 +1,31 @@
 import traceback
 import os
 from fastapi import HTTPException, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from starlette import status
 
 DEBUG_MODE = os.getenv("DEBUG_MODE", "false").lower() == "true"
+
+
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    errors = [
+        {
+            "type": error["type"],
+            "location": list(error["loc"]),
+            "message": error["msg"],
+        }
+        for error in exc.errors()
+    ]
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+        content={
+            "code": status.HTTP_422_UNPROCESSABLE_CONTENT,
+            "message": "请求参数校验失败",
+            "data": {"errors": errors},
+        },
+    )
 
 async def http_exception_handler(request: Request, exc: HTTPException):
     """
@@ -25,8 +45,12 @@ async def integrity_error_handler(request: Request, exc: IntegrityError):
     处理数据库完整性约束错误
     """
     error_msg = str(exc.orig)
-    if "username_UNIQUE" in error_msg or "Duplicate entry" in error_msg:
+    if "username_UNIQUE" in error_msg:
         detail = "用户名已存在"
+    elif "phone_UNIQUE" in error_msg:
+        detail = "手机号已存在"
+    elif "user_news_unique" in error_msg:
+        detail = "该新闻已收藏"
     elif "FOREIGN KEY" in error_msg:
         detail = "关联数据不存在"
     else:

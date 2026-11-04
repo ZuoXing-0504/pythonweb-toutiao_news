@@ -13,15 +13,19 @@ router = APIRouter(prefix="/api/news", tags=["news"])
 
 
 @router.get("/categories", response_model=ApiResponse[list[CategoryResponse]])
-async def get_categories(skip: int = 0, limit: int = 100,db:AsyncSession = Depends(get_db)):
+async def get_categories(
+        skip: int = Query(0, ge=0),
+        limit: int = Query(100, ge=1, le=100),
+        db: AsyncSession = Depends(get_db),
+):
     categories = await news_cache.get_categories(db,skip,limit)
     return success_response(message="获取新闻分类成功", data=categories)
 # 新闻列表
 @router.get("/list", response_model=ApiResponse[NewsListResponse])
 async def get_news_list(
-        category_id: int = Query(...,alias="categoryId"),
-        page: int = 1,
-        page_size: int = Query(10, alias="pageSize",le=100),
+        category_id: int = Query(..., alias="categoryId", ge=1),
+        page: int = Query(1, ge=1),
+        page_size: int = Query(10, alias="pageSize", ge=1, le=100),
         db:AsyncSession = Depends(get_db)
 ):
     news_list = await news_cache.get_news_list(db,category_id,(page-1)*page_size,page_size)
@@ -32,7 +36,7 @@ async def get_news_list(
 #详情
 @router.get("/detail", response_model=ApiResponse[NewsDetailResponse])
 async def get_news_detail(
-        news_id: int = Query(...,alias="id"),
+        news_id: int = Query(..., alias="id", ge=1),
         db:AsyncSession = Depends(get_db)
 ):
     #查询新闻详情+增加浏览量+相关新闻
@@ -43,6 +47,7 @@ async def get_news_detail(
     views_res = await news.increase_news_views(db,news_id)
     if not views_res:
         raise HTTPException(status_code=500,detail="增加浏览量失败")
+    await db.refresh(news_detail, attribute_names=["views"])
     #查询相关新闻
     related_news = await news.get_related_news(db,news_detail.category_id,news_id)
 

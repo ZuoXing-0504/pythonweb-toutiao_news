@@ -1,4 +1,5 @@
 from datetime import datetime
+from pydantic import Field
 from schemas.base import CamelModel, NewsItemBase
 
 
@@ -6,7 +7,7 @@ class FavoriteCheckResponse(CamelModel):
     is_favorite: bool
 #添加收藏请求
 class FavoriteAddRequest(CamelModel):
-    news_id: int
+    news_id: int = Field(ge=1)
 
 
 class FavoriteRecordResponse(CamelModel):

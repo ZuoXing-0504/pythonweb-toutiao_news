@@ -23,12 +23,21 @@ async def add_favorite(
         user_id: int,
         news_id: int
 ) -> Favorite:
+    stmt = select(Favorite).where(
+        Favorite.user_id == user_id,
+        Favorite.news_id == news_id,
+    )
+    result = await db.execute(stmt)
+    existing = result.scalar_one_or_none()
+    if existing:
+        return existing
+
     favorite = Favorite(
         user_id=user_id,
         news_id=news_id
     )
     db.add(favorite)
-    await db.commit()
+    await db.flush()
     await db.refresh(favorite)
     return favorite
 
@@ -43,7 +52,6 @@ async def remove_favorite(
         Favorite.news_id == news_id
     )
     result =await db.execute(stmt)
-    await db.commit()
     return result.rowcount > 0
 
 # 获取收藏列表,连表查询新闻信息
@@ -60,7 +68,7 @@ async def get_favorite_list(
     stmt = (select(News,Favorite.created_at.label("favorite_time"),Favorite.id.label("favorite_id"))
             .join(Favorite,Favorite.news_id == News.id)
             .where(Favorite.user_id == user_id)
-            .order_by(Favorite.created_at.desc())
+            .order_by(Favorite.created_at.desc(), Favorite.id.desc())
             .offset((page - 1) * page_size)
             .limit(page_size)
             )
@@ -74,7 +82,6 @@ async def clear_favorite(
 ) -> int:
     stmt = delete(Favorite).where(Favorite.user_id == user_id)
     result =await db.execute(stmt)
-    await db.commit()
     return result.rowcount or 0
 
 

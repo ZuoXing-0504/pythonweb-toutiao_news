@@ -1,10 +1,11 @@
 from datetime import datetime
+from pydantic import Field
 
 from schemas.base import CamelModel, NewsItemBase
 
 
 class HistoryAddRequest(CamelModel):
-    news_id: int
+    news_id: int = Field(ge=1)
 
 
 class HistoryRecordResponse(CamelModel):

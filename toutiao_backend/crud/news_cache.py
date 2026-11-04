@@ -11,7 +11,7 @@ async def get_categories(db:AsyncSession, skip: int = 0, limit: int = 100):
     cached_categories = await get_cached_categories()
     if cached_categories:
         return cached_categories
-    stmt = select(Category).offset(skip).limit(limit)
+    stmt = select(Category).order_by(Category.sort_order, Category.id).offset(skip).limit(limit)
     result = await db.execute(stmt)
     categories = result.scalars().all()
     #将查询结果写入缓存
@@ -27,7 +27,13 @@ async def get_news_list(db:AsyncSession,category_id: int,  skip: int = 0, limit:
     cached_news = await get_cached_news_list(category_id,page,limit)
     if cached_news:
         return [News(**news) for news in cached_news]
-    stmt = select(News).where(News.category_id == category_id).offset(skip).limit(limit)
+    stmt = (
+        select(News)
+        .where(News.category_id == category_id)
+        .order_by(News.publish_time.desc(), News.id.desc())
+        .offset(skip)
+        .limit(limit)
+    )
     result = await db.execute(stmt)
     news = result.scalars().all()
     #将查询结果写入缓存
@@ -52,7 +58,6 @@ async def get_news_detail(db:AsyncSession, news_id: int):
 async def increase_news_views(db:AsyncSession, news_id: int):
     stmt = update(News).where(News.id == news_id).values(views=News.views + 1)
     result = await db.execute(stmt)
-    await db.commit()
     #检查数据库是否命中了数据-命中了return true
     return result.rowcount > 0
 #相关新闻
