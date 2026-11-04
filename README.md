@@ -24,7 +24,7 @@
 - [x] 完成浏览历史接口
 - [x] 统一 ORM Base 和响应结构
 - [x] 添加 Alembic 数据库迁移
-- [ ] 添加自动化接口测试
+- [x] 添加自动化接口测试
 - [ ] 将 AI 请求迁移到后端代理
 
 ## 本地启动
@@ -40,6 +40,15 @@
 - 新数据库：在 `toutiao_backend` 目录运行 `alembic upgrade head`。
 - 已有且结构与初始迁移一致的数据库：先运行 `alembic stamp head`，之后再使用正常迁移命令。
 - 创建新迁移：`alembic revision --autogenerate -m "变更说明"`。
+
+## 自动化测试
+
+测试使用内存 SQLite，不会修改本地 MySQL 或 Redis 数据。
+
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
 
 > 注意：项目仍在开发中，部分前端功能对应的后端接口尚未完成。
 
