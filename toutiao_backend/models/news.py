@@ -1,24 +1,13 @@
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy.orm import DeclarativeBase,Mapped,mapped_column
+from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import DateTime, Integer, String, Index, Text, ForeignKey
 
-
-class Base(DeclarativeBase):
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime,
-        default=datetime.now(),
-        comment="创建时间")
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime,
-        default=datetime.now(),
-        onupdate=datetime.now(),
-        comment="更新时间")
+from models.base import Base, TimestampMixin, utc_now
 
 
-
-class Category(Base):
+class Category(TimestampMixin, Base):
     __tablename__ = "news_category"
     id: Mapped[int] = mapped_column(
         Integer,
@@ -43,7 +32,7 @@ class Category(Base):
 
 # 新闻
 
-class News(Base):
+class News(TimestampMixin, Base):
     __tablename__ = "news"
     # 创建索引：提升查询速度
     __table_args__ = (
@@ -59,6 +48,6 @@ class News(Base):
     author: Mapped[Optional[str]] = mapped_column(String(50), comment="作者")
     category_id: Mapped[int] = mapped_column(Integer, ForeignKey('news_category.id'), nullable=False, comment="分类ID")
     views: Mapped[int] = mapped_column(Integer, default=0, nullable=False,comment="浏览量")
-    publish_time: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(), comment = "发布时间")
+    publish_time: Mapped[datetime] = mapped_column(DateTime, default=utc_now, comment = "发布时间")
     def __repr__(self):
         return f"<News(id={self.id}, title='{self.title}', views={self.views})>"

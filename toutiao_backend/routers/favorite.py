@@ -10,12 +10,13 @@ from crud import favorite
 from utils.auth import get_current_user
 
 from utils.response import success_response
-from schemas.favorite import FavoriteCheckResponse, FavoriteAddRequest, FavoriteListResponse
+from schemas.base import ApiResponse
+from schemas.favorite import FavoriteCheckResponse, FavoriteAddRequest, FavoriteListResponse, FavoriteRecordResponse
 
 router = APIRouter(prefix="/api/favorite",tags=["favorite"])
 
 #检查收藏
-@router.get("/check")
+@router.get("/check", response_model=ApiResponse[FavoriteCheckResponse])
 async def check_favorite(
         news_id:int = Query(...,alias="newsId"),
         user:User = Depends(get_current_user),
@@ -24,7 +25,7 @@ async def check_favorite(
     is_favorite = await favorite.is_news_favorite(db,user.id,news_id)
     return success_response(message="检查收藏状态成功",data=FavoriteCheckResponse(isFavorite=is_favorite))
 #添加收藏
-@router.post("/add")
+@router.post("/add", response_model=ApiResponse[FavoriteRecordResponse])
 async def add_favorite(
         data:FavoriteAddRequest,
         user:User = Depends(get_current_user),
@@ -34,7 +35,7 @@ async def add_favorite(
     return success_response(message="添加收藏成功",data=result)
 
 #取消收藏
-@router.delete("/remove")
+@router.delete("/remove", response_model=ApiResponse[None])
 async def remove_favorite(
         news_id:int = Query(...,alias="newsId"),
         user:User = Depends(get_current_user),
@@ -47,7 +48,7 @@ async def remove_favorite(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="收藏记录不存在")
 
 #获取收藏列表
-@router.get("/list")
+@router.get("/list", response_model=ApiResponse[FavoriteListResponse])
 async def get_favorite_list(
         page: int = Query(default=1,ge = 1),
         page_size: int = Query(default=10,alias="pageSize",ge=1,le=100),
@@ -67,7 +68,7 @@ async def get_favorite_list(
     return success_response(message="获取收藏列表成功",data=data)
 
 #清空收藏列表
-@router.delete("/clear")
+@router.delete("/clear", response_model=ApiResponse[None])
 async def clear_favorite(
         user:User = Depends(get_current_user),
         db:AsyncSession = Depends(get_db)

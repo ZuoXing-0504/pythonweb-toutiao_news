@@ -1,12 +1,8 @@
-from fastapi.responses import JSONResponse
-from fastapi.encoders import jsonable_encoder
+from typing import Any
 
-def success_response(message:str="success", data=None):
-    content = {
-        "code": 200,
-        "message": message,
-        "data": data
-    }
-    return JSONResponse(content=jsonable_encoder(content))
+from schemas.base import ApiResponse
 
+
+def success_response(message: str = "success", data: Any = None) -> ApiResponse[Any]:
+    return ApiResponse(message=message, data=data)
 

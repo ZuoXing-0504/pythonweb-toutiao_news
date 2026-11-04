@@ -1,27 +1,26 @@
-from pydantic import BaseModel,Field,ConfigDict
 from datetime import datetime
-from schemas.base import NewsItemBase
+from schemas.base import CamelModel, NewsItemBase
 
 
-class FavoriteCheckResponse(BaseModel):
-    is_favorite: bool = Field(...,alias="isFavorite")
+class FavoriteCheckResponse(CamelModel):
+    is_favorite: bool
 #添加收藏请求
-class FavoriteAddRequest(BaseModel):
-    news_id: int = Field(...,alias="newsId")
+class FavoriteAddRequest(CamelModel):
+    news_id: int
+
+
+class FavoriteRecordResponse(CamelModel):
+    id: int
+    news_id: int
+    created_at: datetime
+
+
 #收藏模型类
 class FavoriteNewsItemModel(NewsItemBase):
-    favorite_id: int = Field(...,alias="favoriteId")
-    favorite_time: datetime = Field(..., alias="favoriteTime")
-    model_config = ConfigDict(
-        populate_by_name=True,
-        from_attributes=True,
-    )
+    favorite_id: int
+    favorite_time: datetime
 #获取收藏列表响应
-class FavoriteListResponse(BaseModel):
+class FavoriteListResponse(CamelModel):
     list: list[FavoriteNewsItemModel]
     total: int
-    has_more: bool = Field(...,alias="hasMore")
-    model_config =ConfigDict(
-        populate_by_name=True,
-        from_attributes=True,
-    )
+    has_more: bool

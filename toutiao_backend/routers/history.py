@@ -1,6 +1,7 @@
 from fastapi import APIRouter,Depends,Query,HTTPException,status
 from sqlalchemy.ext.asyncio import AsyncSession
-from schemas.history import HistoryListResponse
+from schemas.base import ApiResponse
+from schemas.history import HistoryListResponse, HistoryRecordResponse
 
 from config.db_conf import get_db
 from crud import history
@@ -11,7 +12,7 @@ from utils.response import success_response
 
 router = APIRouter(prefix="/api/history",tags=["history"])
 #添加历史记录
-@router.post("/add")
+@router.post("/add", response_model=ApiResponse[HistoryRecordResponse])
 async def add_history(
         data:HistoryAddRequest,
         user:User = Depends(get_current_user),
@@ -21,7 +22,7 @@ async def add_history(
     return success_response(message="添加历史记录成功",data=result)
 
 #获取浏览历史列表
-@router.get("/list")
+@router.get("/list", response_model=ApiResponse[HistoryListResponse])
 async def list_history(
         page:int = Query(1,ge =1),
         page_size:int = Query(10,ge =1,le = 100,alias = "pageSize"),
@@ -37,7 +38,7 @@ async def list_history(
     return success_response(message="获取浏览历史列表成功",data=HistoryListResponse(list=hi_list,total=total,has_more=has_more))
 
 #删除单条历史记录
-@router.delete("/delete/{news_id}")
+@router.delete("/delete/{news_id}", response_model=ApiResponse[None])
 async def delete_history(
         news_id:int,
         user:User = Depends(get_current_user),
@@ -52,7 +53,7 @@ async def delete_history(
 
     return success_response(message="删除历史记录成功")
 #清空浏览历史列表
-@router.delete("/clear")
+@router.delete("/clear", response_model=ApiResponse[None])
 async def clear_history(
         user:User = Depends(get_current_user),
         db:AsyncSession = Depends(get_db)
