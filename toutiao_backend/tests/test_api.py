@@ -1,11 +1,14 @@
 from datetime import datetime, timedelta
 
 from sqlalchemy import func, select
+from fastapi.responses import StreamingResponse
 
+from main import app
 from models.favorite import Favorite
 from models.history import History
 from models.news import Category, News
 from models.users import User
+from services.ai import get_ai_service
 
 
 async def register(client, username: str = "student_01") -> str:
@@ -164,3 +167,40 @@ async def test_history_upsert_and_delete_are_idempotent(client, session_factory)
         f"/api/history/delete/{news_id}", headers=headers
     )
     assert deleted.status_code == deleted_again.status_code == 200
+
+
+async def test_ai_chat_requires_authentication(client):
+    response = await client.post(
+        "/api/ai/chat",
+        json={"messages": [{"role": "user", "content": "你好"}]},
+    )
+
+    assert response.status_code == 401
+    assert response.json()["message"] == "缺少身份凭证"
+
+
+async def test_ai_chat_proxies_sse_for_authenticated_user(client):
+    token = await register(client, username="ai_user")
+    captured = {}
+
+    class FakeAIService:
+        async def create_chat_stream(self, chat_request):
+            captured["messages"] = chat_request.messages
+
+            async def chunks():
+                yield b'data: {"choices":[{"delta":{"content":"hello"}}]}\n\n'
+                yield b"data: [DONE]\n\n"
+
+            return StreamingResponse(chunks(), media_type="text/event-stream")
+
+    app.dependency_overrides[get_ai_service] = lambda: FakeAIService()
+    response = await client.post(
+        "/api/ai/chat",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"messages": [{"role": "user", "content": "你好"}]},
+    )
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/event-stream")
+    assert "hello" in response.text
+    assert captured["messages"][0].content == "你好"

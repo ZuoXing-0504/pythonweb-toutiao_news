@@ -52,7 +52,10 @@ MYSQL_ROOT_PASSWORD=替换为本地开发密码
 MYSQL_DATABASE=news_app
 MYSQL_USER=news_user
 MYSQL_PASSWORD=替换为本地开发密码
+AI_API_KEY=替换为重新生成的服务端密钥
 ```
+
+AI 密钥只配置在仓库根目录的 `.env` 中，由 FastAPI 代理 AI 请求。不要使用 `VITE_AI_API_KEY`，因为所有 `VITE_` 变量都会被打包进浏览器。AI 问答接口要求用户先登录。
 
 2. 在仓库根目录启动全部服务：
 
