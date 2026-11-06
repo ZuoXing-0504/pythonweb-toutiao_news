@@ -35,6 +35,48 @@
 4. 在 toutiao_backend 目录运行：uvicorn main:app --reload
 5. FastAPI 文档地址：http://127.0.0.1:8000/docs。
 
+## Docker Compose 启动
+
+项目通过独立的 Compose 网络和数据卷运行 FastAPI、MySQL 与 Redis。MySQL 和 Redis 不映射到宿主机端口，因此不会与本机的 `3306` 或已有的 Docker Redis 冲突。
+
+1. 在仓库根目录复制环境变量模板，并按需修改本地开发密码：
+
+```powershell
+Copy-Item .env.example .env
+```
+
+模板内容如下：
+
+```dotenv
+MYSQL_ROOT_PASSWORD=替换为本地开发密码
+MYSQL_DATABASE=news_app
+MYSQL_USER=news_user
+MYSQL_PASSWORD=替换为本地开发密码
+```
+
+2. 在仓库根目录启动全部服务：
+
+```bash
+docker compose up -d --build
+```
+
+3. 查看服务状态和 API 日志：
+
+```bash
+docker compose ps
+docker compose logs -f api
+```
+
+4. 访问 Swagger：http://127.0.0.1:8000/docs。
+
+停止服务但保留数据库数据：
+
+```bash
+docker compose down
+```
+
+`docker compose down -v` 会同时删除本项目的 MySQL 和 Redis 数据卷，除非确定要重置数据，否则不要使用。
+
 ## 数据库迁移
 
 - 新数据库：在 `toutiao_backend` 目录运行 `alembic upgrade head`。
