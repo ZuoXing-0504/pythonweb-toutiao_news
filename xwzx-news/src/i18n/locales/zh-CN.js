@@ -16,7 +16,6 @@ export default {
   },
   nav: {
     home: '首页',
-    aiChat: 'AI问答',
     my: '我的'
   },
   home: {
@@ -37,12 +36,6 @@ export default {
       finance: '财经',
       more: '更多'
     }
-  },
-  aiChat: {
-    title: 'AI问答',
-    placeholder: '请输入您的问题...',
-    send: '发送',
-    thinking: 'AI思考中...'
   },
   my: {
     title: '我的',

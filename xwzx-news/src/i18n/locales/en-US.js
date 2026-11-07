@@ -16,7 +16,6 @@ export default {
   },
   nav: {
     home: 'Home',
-    aiChat: 'AI Chat',
     my: 'My'
   },
   home: {
@@ -37,12 +36,6 @@ export default {
       finance: 'Finance',
       more: 'More'
     }
-  },
-  aiChat: {
-    title: 'AI Chat',
-    placeholder: 'Enter your question...',
-    send: 'Send',
-    thinking: 'AI is thinking...'
   },
   my: {
     title: 'My',

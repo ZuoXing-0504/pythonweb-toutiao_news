@@ -69,15 +69,6 @@ const routes = [
     }
   },
   {
-    path: '/aichat',
-    name: 'AIChat',
-    component: () => import('../views/AIChat.vue'),
-    meta: {
-      title: 'AI问答',
-      keepAlive: true
-    }
-  },
-  {
     path: '/my',
     name: 'My',
     component: () => import('../views/My.vue'),

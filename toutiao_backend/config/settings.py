@@ -5,11 +5,6 @@ from functools import lru_cache
 from dotenv import load_dotenv
 
 
-DEFAULT_AI_API_URL = (
-    "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
-)
-
-
 def _get_bool(name: str, default: bool) -> bool:
     value = os.getenv(name)
     if value is None:
@@ -50,10 +45,6 @@ class Settings:
     database_max_overflow: int
     redis_url: str
     redis_timeout_seconds: float
-    ai_api_key: str
-    ai_api_base_url: str
-    ai_model: str
-    ai_timeout_seconds: float
     cors_origins: tuple[str, ...]
     log_level: str
 
@@ -91,14 +82,6 @@ class Settings:
             redis_url=os.getenv("REDIS_URL", "redis://localhost:6379/0").strip(),
             redis_timeout_seconds=_get_float(
                 "REDIS_TIMEOUT_SECONDS", 1.0, 0.1, 30.0
-            ),
-            ai_api_key=os.getenv("AI_API_KEY", "").strip(),
-            ai_api_base_url=os.getenv(
-                "AI_API_BASE_URL", DEFAULT_AI_API_URL
-            ).strip(),
-            ai_model=os.getenv("AI_MODEL", "qwen3.8-max").strip(),
-            ai_timeout_seconds=_get_float(
-                "AI_TIMEOUT_SECONDS", 60.0, 10.0, 300.0
             ),
             cors_origins=origins,
             log_level=log_level,

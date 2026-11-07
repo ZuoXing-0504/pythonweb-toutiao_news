@@ -44,10 +44,6 @@ services:
       DATABASE_MAX_OVERFLOW: ${DATABASE_MAX_OVERFLOW:-20}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
-      AI_API_KEY: ${AI_API_KEY:-}
-      AI_API_BASE_URL: ${AI_API_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions}
-      AI_MODEL: ${AI_MODEL:-qwen3.8-max}
-      AI_TIMEOUT_SECONDS: ${AI_TIMEOUT_SECONDS:-60}
     ports:
       - "8000:8000"
     depends_on:

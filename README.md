@@ -7,7 +7,7 @@
 ![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?logo=mysql&logoColor=white)
 ![Redis](https://img.shields.io/badge/Redis-7-DC382D?logo=redis&logoColor=white)
 
-一个基于 FastAPI 与 Vue 3 的前后端分离新闻资讯平台。项目包含用户认证、新闻浏览、收藏、历史记录和 AI 问答，并围绕数据库迁移、并发一致性、缓存降级、自动化测试、持续集成与容器化部署进行了完整的后端工程化实践。
+一个基于 FastAPI 与 Vue 3 的前后端分离新闻资讯平台。项目包含用户认证、新闻浏览、收藏和历史记录，并围绕数据库迁移、并发一致性、缓存降级、自动化测试、持续集成与容器化部署进行了完整的后端工程化实践。
 
 ## 系统架构
 
@@ -18,7 +18,6 @@ flowchart LR
     Nginx -->|/api 反向代理| API[FastAPI]
     API --> MySQL[(MySQL)]
     API --> Redis[(Redis)]
-    API --> AI[AI API]
 ```
 
 生产环境仅对外暴露 Nginx。FastAPI、MySQL 和 Redis 通过 Docker 内部网络通信，数据库与缓存端口不会直接暴露到公网。
@@ -29,7 +28,6 @@ flowchart LR
 - 新闻分类、分页列表、详情、浏览量和相关新闻
 - 新闻收藏状态检查、添加、删除、分页列表和清空
 - 浏览历史添加、删除、分页列表和清空
-- 登录用户 AI 流式问答，密钥仅保存在服务端
 - 中英文界面和主题设置
 
 ## 工程亮点
@@ -39,9 +37,8 @@ flowchart LR
 - **数据库迁移**：通过 Alembic 管理初始表结构和后续约束变更，容器启动时自动执行迁移。
 - **并发一致性**：通过数据库唯一约束、事务回滚和幂等写入，避免并发请求产生重复收藏、历史记录和 Token。
 - **缓存降级**：新闻分类与分页结果采用 Cache Aside 模式；Redis 不可用时自动回退 MySQL，空结果使用短 TTL 降低缓存穿透风险。
-- **密钥保护**：浏览器只请求 FastAPI，由服务端携带 AI Key 调用第三方服务，避免密钥进入前端构建产物。
 - **可观测性**：记录请求 ID、HTTP 状态码和接口耗时，并输出结构化日志。
-- **自动化验证**：当前包含 20 个单元测试和 2 个真实 MySQL/Redis 集成测试，覆盖认证、分页、事务回滚、并发写入和缓存降级等场景。
+- **自动化验证**：当前包含 18 个单元测试和 2 个真实 MySQL/Redis 集成测试，覆盖认证、分页、事务回滚、并发写入和缓存降级等场景。
 - **持续集成**：GitHub Actions 自动执行后端单元测试、MySQL/Redis 集成测试、前端构建与 Docker 构建检查。
 - **容器化部署**：使用 Docker Compose 编排 FastAPI、MySQL、Redis 和 Nginx，包含健康检查、数据卷与 HTTPS 配置模板。
 
@@ -106,10 +103,7 @@ MYSQL_ROOT_PASSWORD=replace_with_a_local_root_password
 MYSQL_DATABASE=news_app
 MYSQL_USER=news_user
 MYSQL_PASSWORD=replace_with_a_local_database_password
-AI_API_KEY=
 ```
-
-`AI_API_KEY` 可以留空，此时只有 AI 问答不可用。不要创建 `VITE_AI_API_KEY`，所有 `VITE_` 环境变量都会进入浏览器构建产物。
 
 ### 2. 启动后端、MySQL 和 Redis
 
@@ -218,7 +212,6 @@ deploy/certbot/conf/live/news.example.com/privkey.pem
 
 ## 安全说明
 
-- 不要把真实密码、数据库连接串、AI Key 或证书提交到 Git。
-- AI 请求必须通过 FastAPI 服务端代理，不能把密钥放入任何 `VITE_` 变量。
+- 不要把真实密码、数据库连接串、第三方 API Key 或证书提交到 Git。
 - 生产环境应使用随机数据库密码、HTTPS 和最小范围的云安全组规则。
 - 如果密钥曾出现在前端、日志、聊天记录或 Git 历史中，应立即作废并重新生成。
