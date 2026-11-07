@@ -86,6 +86,16 @@ docker compose down
 - 已有且结构与初始迁移一致的数据库：先运行 `alembic stamp head`，之后再使用正常迁移命令。
 - 创建新迁移：`alembic revision --autogenerate -m "变更说明"`。
 
+## 演示数据
+
+新数据库完成迁移后，可以在后端目录执行：
+
+```bash
+python -m scripts.seed_data
+```
+
+命令会补齐 8 个新闻分类和 8 条演示新闻，并清理新闻缓存。该命令可以重复执行，不会重复插入同一批演示新闻。
+
 ## 自动化测试
 
 测试使用内存 SQLite，不会修改本地 MySQL 或 Redis 数据。
