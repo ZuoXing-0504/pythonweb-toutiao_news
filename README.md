@@ -25,7 +25,7 @@
 - [x] 统一 ORM Base 和响应结构
 - [x] 添加 Alembic 数据库迁移
 - [x] 添加自动化接口测试
-- [ ] 将 AI 请求迁移到后端代理
+- [x] 将 AI 请求迁移到后端代理
 
 ## 本地启动
 
@@ -110,4 +110,29 @@ pytest
 新闻分类和完整分页结果（列表、总数、是否有下一页）采用 Cache Aside 模式：优先读取 Redis，未命中时查询 MySQL 并回填缓存。缓存内容统一使用 Pydantic DTO，Redis 异常时自动降级到数据库；空结果使用短 TTL 防止缓存穿透，新闻浏览量允许在 10 分钟 TTL 内最终一致。Redis 连接通过 `REDIS_URL` 配置。
 
 > 注意：项目仍在开发中，部分前端功能对应的后端接口尚未完成。
+
+## 生产部署
+
+生产配置由 Nginx 提供前端静态文件，并将 `/api`、`/docs` 和 `/openapi.json` 转发给 FastAPI。FastAPI 在生产组合中不暴露宿主机端口。
+
+先配置域名变量，然后启动 HTTP 版本验证部署：
+
+```bash
+SERVER_NAME=news.example.com docker compose -f compose.yaml -f compose.prod.yaml up -d --build
+```
+
+配置 DNS、开放云服务器的 80/443 端口，并使用 Certbot 为域名签发证书。证书目录应包含：
+
+```text
+deploy/certbot/conf/live/news.example.com/fullchain.pem
+deploy/certbot/conf/live/news.example.com/privkey.pem
+```
+
+证书就绪后启用 HTTPS 覆盖配置：
+
+```bash
+SERVER_NAME=news.example.com docker compose -f compose.yaml -f compose.prod.yaml -f compose.https.yaml up -d --build
+```
+
+仓库不包含证书和私钥。在线演示地址只有在云服务器、域名和 DNS 配置完成后才会产生。
 
