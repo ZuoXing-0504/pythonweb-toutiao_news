@@ -3,6 +3,8 @@ import secrets
 from datetime import timedelta
 from fastapi import HTTPException
 from sqlalchemy import select,update
+from sqlalchemy.dialects.mysql import insert as mysql_insert
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from utils import security
 from models.users import User, UserToken
@@ -27,16 +29,31 @@ async def create_user( db: AsyncSession, user_data: UserRequest):
 async def create_token(db: AsyncSession,user_id: int):
      token = secrets.token_urlsafe(32)
      expires_at = utc_now() + timedelta(days=7)
-     query = select(UserToken).where(UserToken.user_id == user_id)
-     result = await db.execute(query)
-     user_token = result.scalar_one_or_none()
-     if user_token:
-        user_token.token = token
-        user_token.expires_at = expires_at
+     values = {
+        "user_id": user_id,
+        "token": token,
+        "expires_at": expires_at,
+        "created_at": utc_now(),
+     }
+     dialect_name = db.get_bind().dialect.name
+     if dialect_name == "mysql":
+        insert_stmt = mysql_insert(UserToken).values(**values)
+        stmt = insert_stmt.on_duplicate_key_update(
+            token=token,
+            expires_at=expires_at,
+        )
+     elif dialect_name == "sqlite":
+        insert_stmt = sqlite_insert(UserToken).values(**values)
+        stmt = insert_stmt.on_conflict_do_update(
+            index_elements=[UserToken.user_id],
+            set_={
+                "token": token,
+                "expires_at": expires_at,
+            },
+        )
      else:
-        user_token = UserToken(user_id=user_id,token=token,expires_at=expires_at)
-     db.add(user_token)
-     await db.flush()
+        raise RuntimeError(f"不支持的数据库类型: {dialect_name}")
+     await db.execute(stmt)
      return token
 #认证密码
 async def authenticate_user( db: AsyncSession,username: str,password: str):

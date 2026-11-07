@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional
-from sqlalchemy import Index, Integer, String, Enum, DateTime, ForeignKey
+from sqlalchemy import Index, Integer, String, Enum, DateTime, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from models.base import Base, TimestampMixin, utc_now
@@ -35,6 +35,7 @@ class UserToken(Base):
     __tablename__ = 'user_token'
     # 创建索引
     __table_args__ = (
+        UniqueConstraint('user_id', name='uq_user_token_user_id'),
         Index('token_UNIQUE', 'token'),
         Index('fk_user_token_user_idx', 'user_id'),
     )

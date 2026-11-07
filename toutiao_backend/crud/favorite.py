@@ -1,4 +1,6 @@
 from sqlalchemy import select,delete,func
+from sqlalchemy.dialects.mysql import insert as mysql_insert
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from models.favorite import Favorite
 from models.news import News
@@ -23,23 +25,31 @@ async def add_favorite(
         user_id: int,
         news_id: int
 ) -> Favorite:
-    stmt = select(Favorite).where(
-        Favorite.user_id == user_id,
-        Favorite.news_id == news_id,
-    )
-    result = await db.execute(stmt)
-    existing = result.scalar_one_or_none()
-    if existing:
-        return existing
+    values = {"user_id": user_id, "news_id": news_id}
+    dialect_name = db.get_bind().dialect.name
 
-    favorite = Favorite(
-        user_id=user_id,
-        news_id=news_id
+    if dialect_name == "mysql":
+        insert_stmt = mysql_insert(Favorite).values(**values)
+        stmt = insert_stmt.on_duplicate_key_update(
+            news_id=insert_stmt.inserted.news_id
+        )
+    elif dialect_name == "sqlite":
+        insert_stmt = sqlite_insert(Favorite).values(**values)
+        stmt = insert_stmt.on_conflict_do_update(
+            index_elements=[Favorite.user_id, Favorite.news_id],
+            set_={"news_id": insert_stmt.excluded.news_id},
+        )
+    else:
+        raise RuntimeError(f"不支持的数据库类型: {dialect_name}")
+
+    await db.execute(stmt)
+    result = await db.execute(
+        select(Favorite).where(
+            Favorite.user_id == user_id,
+            Favorite.news_id == news_id,
+        )
     )
-    db.add(favorite)
-    await db.flush()
-    await db.refresh(favorite)
-    return favorite
+    return result.scalar_one()
 
 # 取消收藏
 async def remove_favorite(
