@@ -4,17 +4,18 @@ from fastapi.middleware.cors import CORSMiddleware
 
 
 from utils.exception_handlers import register_exception_handlers
+from config.settings import get_settings
 
 app = FastAPI()
 #注册异常处理器
 register_exception_handlers(app)
 
-origins = ["http://localhost:5173","http://127.0.0.1:5173"]
+settings = get_settings()
 
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,#允许的来源
+    allow_origins=list(settings.cors_origins),#允许的来源
     allow_credentials=True,#cookie是否允许跨域
     allow_methods=["*"],
     allow_headers=["*"],

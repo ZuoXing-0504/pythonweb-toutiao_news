@@ -1,12 +1,12 @@
 import traceback
-import os
 from fastapi import HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from starlette import status
+from config.settings import get_settings
 
-DEBUG_MODE = os.getenv("DEBUG_MODE", "false").lower() == "true"
+settings = get_settings()
 
 
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
@@ -56,7 +56,7 @@ async def integrity_error_handler(request: Request, exc: IntegrityError):
     else:
         detail = "数据约束冲突，请检查输入"
     error_data = None
-    if DEBUG_MODE:
+    if settings.debug_mode:
         error_data = {
             "error_type": "IntegrityError",
             "error_detail": error_msg,
@@ -76,7 +76,7 @@ async def sqlalchemy_error_handler(request: Request, exc: SQLAlchemyError):
     处理 SQLAlchemy 数据库错误
     """
     error_data = None
-    if DEBUG_MODE:
+    if settings.debug_mode:
         error_data = {
             "error_type": type(exc).__name__,
             "error_detail": str(exc),
@@ -97,7 +97,7 @@ async def general_exception_handler(request: Request, exc: Exception):
     处理所有未捕获的异常
     """
     error_data = None
-    if DEBUG_MODE:
+    if settings.debug_mode:
         error_data = {
             "error_type": type(exc).__name__,
             "error_detail": str(exc),

@@ -1,20 +1,14 @@
-import os
-
-from dotenv import load_dotenv
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession, create_async_engine
 
-load_dotenv()
+from config.settings import get_settings
 
-# 数据库URL
-ASYNC_DATABASE_URL = os.getenv("ASYNC_DATABASE_URL")
-if not ASYNC_DATABASE_URL:
-    raise RuntimeError("缺少 ASYNC_DATABASE_URL 环境变量，请参考 .env.example 配置")
+settings = get_settings()
 # 创建异步引擎
 async_engine = create_async_engine(
- ASYNC_DATABASE_URL,
- echo=os.getenv("DEBUG_MODE", "false").lower() == "true",
- pool_size=10, # 设置连接池中保持的持久连接数
- max_overflow=20 # 设置连接池允许创建的额外连接数
+ settings.database_url,
+ echo=settings.debug_mode,
+ pool_size=settings.database_pool_size,
+ max_overflow=settings.database_max_overflow,
 )
 # 创建异步会话⼯⼚
 AsyncSessionLocal = async_sessionmaker(

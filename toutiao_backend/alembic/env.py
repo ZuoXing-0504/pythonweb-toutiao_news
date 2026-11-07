@@ -1,14 +1,13 @@
 import asyncio
-import os
 from logging.config import fileConfig
 
-from dotenv import load_dotenv
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 from models import Base
+from config.settings import get_settings
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -23,10 +22,7 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-load_dotenv()
-database_url = os.getenv("ASYNC_DATABASE_URL")
-if not database_url:
-    raise RuntimeError("缺少 ASYNC_DATABASE_URL 环境变量，请参考 .env.example 配置")
+database_url = get_settings().database_url
 
 config.set_main_option("sqlalchemy.url", database_url.replace("%", "%%"))
 target_metadata = Base.metadata

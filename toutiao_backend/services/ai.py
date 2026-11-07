@@ -1,20 +1,13 @@
 import logging
-import os
-
 import httpx
 from fastapi import HTTPException, status
 from fastapi.responses import StreamingResponse
 
 from schemas.ai import AIChatRequest
+from config.settings import get_settings
 
 
 logger = logging.getLogger(__name__)
-
-DEFAULT_AI_API_URL = (
-    "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
-)
-DEFAULT_AI_MODEL = "qwen3.8-max"
-
 
 class AIService:
     def __init__(
@@ -95,21 +88,16 @@ class AIService:
 
 
 def get_ai_service() -> AIService:
-    api_key = os.getenv("AI_API_KEY", "").strip()
-    if not api_key:
+    settings = get_settings()
+    if not settings.ai_api_key:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="AI 服务尚未配置",
         )
 
-    try:
-        timeout_seconds = float(os.getenv("AI_TIMEOUT_SECONDS", "60"))
-    except ValueError:
-        timeout_seconds = 60.0
-
     return AIService(
-        api_key=api_key,
-        api_url=os.getenv("AI_API_BASE_URL", DEFAULT_AI_API_URL),
-        model=os.getenv("AI_MODEL", DEFAULT_AI_MODEL),
-        timeout_seconds=max(10.0, min(timeout_seconds, 300.0)),
+        api_key=settings.ai_api_key,
+        api_url=settings.ai_api_base_url,
+        model=settings.ai_model,
+        timeout_seconds=settings.ai_timeout_seconds,
     )

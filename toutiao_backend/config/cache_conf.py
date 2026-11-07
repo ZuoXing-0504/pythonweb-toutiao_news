@@ -1,23 +1,21 @@
 import json
 import logging
-import os
 from typing import Any
 
 import redis.asyncio as redis
-from dotenv import load_dotenv
 from redis.exceptions import RedisError
+
+from config.settings import get_settings
 
 
 logger = logging.getLogger(__name__)
-load_dotenv()
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-REDIS_TIMEOUT_SECONDS = float(os.getenv("REDIS_TIMEOUT_SECONDS", "1.0"))
+settings = get_settings()
 
 redis_client = redis.from_url(
-    REDIS_URL,
+    settings.redis_url,
     decode_responses=True,
-    socket_connect_timeout=REDIS_TIMEOUT_SECONDS,
-    socket_timeout=REDIS_TIMEOUT_SECONDS,
+    socket_connect_timeout=settings.redis_timeout_seconds,
+    socket_timeout=settings.redis_timeout_seconds,
 )
 
 
