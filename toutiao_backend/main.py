@@ -5,12 +5,16 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from utils.exception_handlers import register_exception_handlers
 from config.settings import get_settings
+from utils.logging import RequestLoggingMiddleware, configure_logging
+
+settings = get_settings()
+configure_logging(settings.log_level)
 
 app = FastAPI()
 #注册异常处理器
 register_exception_handlers(app)
 
-settings = get_settings()
+app.add_middleware(RequestLoggingMiddleware)
 
 
 app.add_middleware(
@@ -19,6 +23,7 @@ app.add_middleware(
     allow_credentials=True,#cookie是否允许跨域
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-Request-ID"],
 )
 
 

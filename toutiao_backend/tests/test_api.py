@@ -204,3 +204,24 @@ async def test_ai_chat_proxies_sse_for_authenticated_user(client):
     assert response.headers["content-type"].startswith("text/event-stream")
     assert "hello" in response.text
     assert captured["messages"][0].content == "你好"
+
+
+async def test_request_id_is_returned_and_can_be_correlated(client):
+    response = await client.get(
+        "/",
+        headers={"X-Request-ID": "test-request-123"},
+    )
+
+    assert response.status_code == 200
+    assert response.headers["X-Request-ID"] == "test-request-123"
+
+
+async def test_invalid_request_id_is_replaced(client):
+    response = await client.get(
+        "/",
+        headers={"X-Request-ID": "invalid request id"},
+    )
+
+    generated_id = response.headers["X-Request-ID"]
+    assert generated_id != "invalid request id"
+    assert len(generated_id) == 32
