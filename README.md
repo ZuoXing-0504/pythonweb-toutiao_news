@@ -1,138 +1,224 @@
-# 头条新闻项目
+# Toutiao News
 
-一个基于网课项目继续独立开发的新闻资讯应用。目前后端仍在开发中，仓库用于记录学习过程和功能迭代。
+[![CI](https://github.com/ZuoXing-0504/pythonweb-toutiao_news/actions/workflows/ci.yml/badge.svg)](https://github.com/ZuoXing-0504/pythonweb-toutiao_news/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-async-009688?logo=fastapi&logoColor=white)
+![Vue](https://img.shields.io/badge/Vue-3-4FC08D?logo=vuedotjs&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?logo=mysql&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-7-DC382D?logo=redis&logoColor=white)
+
+一个基于 FastAPI 与 Vue 3 的前后端分离新闻资讯平台。项目包含用户认证、新闻浏览、收藏、历史记录和 AI 问答，并围绕数据库迁移、并发一致性、缓存降级、自动化测试、持续集成与容器化部署进行了完整的后端工程化实践。
+
+## 系统架构
+
+```mermaid
+flowchart LR
+    Browser[浏览器] --> Nginx[Nginx]
+    Nginx -->|静态文件| Vue[Vue 3]
+    Nginx -->|/api 反向代理| API[FastAPI]
+    API --> MySQL[(MySQL)]
+    API --> Redis[(Redis)]
+    API --> AI[AI API]
+```
+
+生产环境仅对外暴露 Nginx。FastAPI、MySQL 和 Redis 通过 Docker 内部网络通信，数据库与缓存端口不会直接暴露到公网。
+
+## 功能
+
+- 用户注册、登录、Token 身份认证、资料维护和密码修改
+- 新闻分类、分页列表、详情、浏览量和相关新闻
+- 新闻收藏状态检查、添加、删除、分页列表和清空
+- 浏览历史添加、删除、分页列表和清空
+- 登录用户 AI 流式问答，密钥仅保存在服务端
+- 中英文界面和主题设置
+
+## 工程亮点
+
+- **异步后端**：使用 FastAPI、SQLAlchemy Async 和 aiomysql 构建异步 API 与数据库访问层。
+- **接口契约**：使用 Pydantic 统一请求校验、响应模型、camelCase 字段与异常响应。
+- **数据库迁移**：通过 Alembic 管理初始表结构和后续约束变更，容器启动时自动执行迁移。
+- **并发一致性**：通过数据库唯一约束、事务回滚和幂等写入，避免并发请求产生重复收藏、历史记录和 Token。
+- **缓存降级**：新闻分类与分页结果采用 Cache Aside 模式；Redis 不可用时自动回退 MySQL，空结果使用短 TTL 降低缓存穿透风险。
+- **密钥保护**：浏览器只请求 FastAPI，由服务端携带 AI Key 调用第三方服务，避免密钥进入前端构建产物。
+- **可观测性**：记录请求 ID、HTTP 状态码和接口耗时，并输出结构化日志。
+- **自动化验证**：当前包含 20 个单元测试和 2 个真实 MySQL/Redis 集成测试，覆盖认证、分页、事务回滚、并发写入和缓存降级等场景。
+- **持续集成**：GitHub Actions 自动执行后端单元测试、MySQL/Redis 集成测试、前端构建与 Docker 构建检查。
+- **容器化部署**：使用 Docker Compose 编排 FastAPI、MySQL、Redis 和 Nginx，包含健康检查、数据卷与 HTTPS 配置模板。
 
 ## 技术栈
 
-- 后端：FastAPI、SQLAlchemy Async、Pydantic、MySQL、aiomysql
-- 前端：Vue 3、Vite、Pinia、Vant
+| 分类 | 技术 |
+| --- | --- |
+| 后端 | Python 3.12、FastAPI、SQLAlchemy 2.0 Async、Pydantic |
+| 数据 | MySQL 8.0、Redis 7、Alembic、aiomysql |
+| 前端 | Vue 3、Vite、Pinia、Vue Router、Vant |
+| 测试 | Pytest、pytest-asyncio、HTTPX、SQLite、MySQL、Redis |
+| 工程 | Docker Compose、Nginx、GitHub Actions、结构化日志 |
 
-## 后端已实现
+## 项目结构
 
-- 用户注册与登录
-- Token 身份认证
-- 获取和修改用户资料
-- 修改密码
-- 新闻分类、分页列表和详情
-- 新闻浏览量及相关新闻
-- 检查新闻收藏状态
-- 统一异常响应
+```text
+.
+├── toutiao_backend/          # FastAPI 后端
+│   ├── alembic/              # 数据库迁移
+│   ├── cache/                # 新闻缓存策略
+│   ├── config/               # 数据库、Redis 与集中配置
+│   ├── crud/                 # 数据访问与事务逻辑
+│   ├── models/               # SQLAlchemy ORM 模型
+│   ├── routers/              # API 路由
+│   ├── schemas/              # Pydantic 请求/响应模型
+│   ├── scripts/              # 演示数据初始化
+│   ├── tests/                # 单元测试与集成测试
+│   └── utils/                # 认证、异常、响应与日志
+├── xwzx-news/                # Vue 3 前端
+├── deploy/nginx/             # HTTPS Nginx 模板
+├── compose.yaml              # 基础服务编排
+├── compose.prod.yaml         # 生产前端与 Nginx
+└── compose.https.yaml        # HTTPS 覆盖配置
+```
 
-## 开发计划
+## 快速开始
 
-- [x] 完成收藏的新增、删除、列表和清空接口
-- [x] 完成浏览历史接口
-- [x] 统一 ORM Base 和响应结构
-- [x] 添加 Alembic 数据库迁移
-- [x] 添加自动化接口测试
-- [x] 将 AI 请求迁移到后端代理
+### 环境要求
 
-## 本地启动
+- Docker Desktop 或 Docker Engine
+- Docker Compose 2.x
+- Node.js 22（仅前端开发需要）
 
-1. 进入后端目录并创建虚拟环境。
-2. 安装依赖：pip install -r requirements.txt
-3. 复制 toutiao_backend/.env.example 为 toutiao_backend/.env，填写本地数据库连接。
-4. 在 toutiao_backend 目录运行：uvicorn main:app --reload
-5. FastAPI 文档地址：http://127.0.0.1:8000/docs。
+### 1. 配置环境变量
 
-## Docker Compose 启动
+在仓库根目录复制模板：
 
-项目通过独立的 Compose 网络和数据卷运行 FastAPI、MySQL 与 Redis。MySQL 和 Redis 不映射到宿主机端口，因此不会与本机的 `3306` 或已有的 Docker Redis 冲突。
+```bash
+cp .env.example .env
+```
 
-1. 在仓库根目录复制环境变量模板，并按需修改本地开发密码：
+Windows PowerShell：
 
 ```powershell
 Copy-Item .env.example .env
 ```
 
-模板内容如下：
+至少修改以下数据库密码：
 
 ```dotenv
-MYSQL_ROOT_PASSWORD=替换为本地开发密码
+MYSQL_ROOT_PASSWORD=replace_with_a_local_root_password
 MYSQL_DATABASE=news_app
 MYSQL_USER=news_user
-MYSQL_PASSWORD=替换为本地开发密码
-AI_API_KEY=替换为重新生成的服务端密钥
+MYSQL_PASSWORD=replace_with_a_local_database_password
+AI_API_KEY=
 ```
 
-AI 密钥只配置在仓库根目录的 `.env` 中，由 FastAPI 代理 AI 请求。不要使用 `VITE_AI_API_KEY`，因为所有 `VITE_` 变量都会被打包进浏览器。AI 问答接口要求用户先登录。
+`AI_API_KEY` 可以留空，此时只有 AI 问答不可用。不要创建 `VITE_AI_API_KEY`，所有 `VITE_` 环境变量都会进入浏览器构建产物。
 
-2. 在仓库根目录启动全部服务：
+### 2. 启动后端、MySQL 和 Redis
 
 ```bash
 docker compose up -d --build
+docker compose ps
 ```
 
-3. 查看服务状态和 API 日志：
+容器会等待 MySQL 和 Redis 健康后自动执行 `alembic upgrade head`，然后启动 FastAPI。
+
+- API 文档：<http://127.0.0.1:8000/docs>
+- OpenAPI：<http://127.0.0.1:8000/openapi.json>
+
+### 3. 初始化演示数据
 
 ```bash
-docker compose ps
-docker compose logs -f api
+docker compose exec api python -m scripts.seed_data
 ```
 
-4. 访问 Swagger：http://127.0.0.1:8000/docs。
+该命令会补齐 8 个新闻分类和 8 条演示新闻，并清理新闻缓存；重复执行不会重复插入。
 
-停止服务但保留数据库数据：
+### 4. 启动前端开发服务器
+
+```bash
+cd xwzx-news
+cp .env.example .env
+npm ci
+npm run dev
+```
+
+Windows PowerShell 可使用 `Copy-Item .env.example .env`。默认前端地址为 <http://127.0.0.1:5173>，API 地址为 <http://127.0.0.1:8000>。
+
+### 5. 停止服务
 
 ```bash
 docker compose down
 ```
 
-`docker compose down -v` 会同时删除本项目的 MySQL 和 Redis 数据卷，除非确定要重置数据，否则不要使用。
-
-## 数据库迁移
-
-- 新数据库：在 `toutiao_backend` 目录运行 `alembic upgrade head`。
-- 已有且结构与初始迁移一致的数据库：先运行 `alembic stamp head`，之后再使用正常迁移命令。
-- 创建新迁移：`alembic revision --autogenerate -m "变更说明"`。
-
-## 演示数据
-
-新数据库完成迁移后，可以在后端目录执行：
-
-```bash
-python -m scripts.seed_data
-```
-
-命令会补齐 8 个新闻分类和 8 条演示新闻，并清理新闻缓存。该命令可以重复执行，不会重复插入同一批演示新闻。
+该命令会保留 MySQL 与 Redis 数据卷。`docker compose down -v` 会删除数据卷，请仅在确定需要重置数据时使用。
 
 ## 自动化测试
 
-测试使用内存 SQLite，不会修改本地 MySQL 或 Redis 数据。
+安装开发依赖：
 
 ```bash
+cd toutiao_backend
 pip install -r requirements-dev.txt
-pytest
 ```
 
-## 缓存策略
+运行不依赖外部服务的单元测试：
 
-新闻分类和完整分页结果（列表、总数、是否有下一页）采用 Cache Aside 模式：优先读取 Redis，未命中时查询 MySQL 并回填缓存。缓存内容统一使用 Pydantic DTO，Redis 异常时自动降级到数据库；空结果使用短 TTL 防止缓存穿透，新闻浏览量允许在 10 分钟 TTL 内最终一致。Redis 连接通过 `REDIS_URL` 配置。
+```bash
+python -m pytest -m "not integration" -q
+```
 
-> 注意：项目仍在开发中，部分前端功能对应的后端接口尚未完成。
+集成测试使用真实 MySQL 与 Redis，由 GitHub Actions 自动准备隔离服务并执行：
+
+```bash
+python -m pytest -m integration -q
+```
+
+本地运行集成测试前需要配置 `TEST_DATABASE_URL` 和 `TEST_REDIS_URL`，不要指向包含重要数据的数据库。
+
+## 数据库迁移
+
+在 `toutiao_backend` 目录执行：
+
+```bash
+alembic upgrade head
+```
+
+创建新迁移：
+
+```bash
+alembic revision --autogenerate -m "describe_change"
+```
+
+生产部署不应使用 `Base.metadata.create_all()` 代替迁移，也不应随意执行 `alembic stamp head` 跳过真实结构变更。
 
 ## 生产部署
 
-生产配置由 Nginx 提供前端静态文件，并将 `/api`、`/docs` 和 `/openapi.json` 转发给 FastAPI。FastAPI 在生产组合中不暴露宿主机端口。
-
-先配置域名变量，然后启动 HTTP 版本验证部署：
+HTTP 部署使用基础配置和生产覆盖配置：
 
 ```bash
-SERVER_NAME=news.example.com docker compose -f compose.yaml -f compose.prod.yaml up -d --build
+SERVER_NAME=news.example.com \
+docker compose -f compose.yaml -f compose.prod.yaml up -d --build
 ```
 
-配置 DNS、开放云服务器的 80/443 端口，并使用 Certbot 为域名签发证书。证书目录应包含：
+生产模式由 Nginx 托管 Vue 构建产物，并把 `/api`、`/docs` 和 `/openapi.json` 转发给 FastAPI。SPA 路由通过 `try_files` 回退到 `index.html`。
+
+配置域名、DNS、80/443 端口和 TLS 证书后，可启用 HTTPS：
+
+```bash
+SERVER_NAME=news.example.com \
+docker compose -f compose.yaml -f compose.prod.yaml -f compose.https.yaml up -d --build
+```
+
+证书默认放置在：
 
 ```text
 deploy/certbot/conf/live/news.example.com/fullchain.pem
 deploy/certbot/conf/live/news.example.com/privkey.pem
 ```
 
-证书就绪后启用 HTTPS 覆盖配置：
+证书、私钥、`.env` 和其他本地密钥文件不会提交到仓库。
 
-```bash
-SERVER_NAME=news.example.com docker compose -f compose.yaml -f compose.prod.yaml -f compose.https.yaml up -d --build
-```
+## 安全说明
 
-仓库不包含证书和私钥。在线演示地址只有在云服务器、域名和 DNS 配置完成后才会产生。
-
+- 不要把真实密码、数据库连接串、AI Key 或证书提交到 Git。
+- AI 请求必须通过 FastAPI 服务端代理，不能把密钥放入任何 `VITE_` 变量。
+- 生产环境应使用随机数据库密码、HTTPS 和最小范围的云安全组规则。
+- 如果密钥曾出现在前端、日志、聊天记录或 Git 历史中，应立即作废并重新生成。
